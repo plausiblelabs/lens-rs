@@ -1,0 +1,8 @@
+[package]
+name = "lens_macros"
+version = "0.0.1"
+authors = ["Chris Campbell <campbell@plausible.coop>"]
+
+[lib]
+name = "lens_macros"
+plugin = true
