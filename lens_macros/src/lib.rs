@@ -11,6 +11,7 @@ extern crate rustc;
 
 use syntax::ast;
 use syntax::ast::{Ident, Item, ItemStruct, MetaItem, StructFieldKind, TokenTree, TtToken, TtDelimited, VariantData};
+use syntax::attr;
 use syntax::attr::AttrMetaMethods;
 use syntax::codemap::Span;
 use syntax::parse::token;
@@ -39,7 +40,20 @@ impl MultiItemDecorator for LensedDecorator {
                             let field = &spanned_field.node;
                             match field.kind {
                                 StructFieldKind::NamedField(ref ident, _) => {
-                                    derive_lens(cx, push, &struct_item, ident, &field.ty, index as u64);
+                                    let no_lens = field.attrs.iter().any(|attr| {
+                                        match attr.node.value.node {
+                                            ast::MetaWord(ref name) if name == &"NoLens" => {
+                                                attr::mark_used(&attr);
+                                                true
+                                            }
+                                            _ => {
+                                                false
+                                            }
+                                        }
+                                    });
+                                    if !no_lens {
+                                        derive_lens(cx, push, &struct_item, ident, &field.ty, index as u64);
+                                    }
                                 }
                                 _ => {
                                     cx.span_err(mitem.span, "`Lensed` may only be applied to structs with named fields");
