@@ -67,7 +67,7 @@ macro_rules! lens_set_stmt {
 #[doc(hidden)]
 macro_rules! lens_set_with_expr {
     { $sname:ident, [$($lhs:tt)+], $e:expr } => {
-        lens_set_left_side!([$sname] $($lhs)+).set_tx(|_| $e)
+        set_tx(lens_set_left_side!([$sname] $($lhs)+), |_| $e)
     };
 }
 
@@ -77,7 +77,7 @@ macro_rules! lens_set_with_expr {
 macro_rules! lens_set_with_fn {
     { $sname:ident, [$($lhs:tt)+], $arg:ident, $e:expr } => {
         {
-            lens_set_left_side!([$sname] $($lhs)+).set_tx(|$arg| $e)
+            set_tx(lens_set_left_side!([$sname] $($lhs)+), |$arg| $e)
         }
     };
 }

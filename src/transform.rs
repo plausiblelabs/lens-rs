@@ -17,32 +17,6 @@ pub trait Transform {
     fn apply(&self, input: Self::Input) -> Self::Output;
 }
 
-/// Allows for conversion into a `Transform`.
-pub trait IntoTransform {
-    /// The input type.
-    type Input;
-
-    /// The output type.
-    type Output;
-
-    /// Type definition for the `into_transform` function return value.
-    type IntoTransformT: Transform<Input=Self::Input, Output=Self::Output>;
-
-    /// Consumes `Self` and returns a `Transform` over it.
-    fn into_transform(self) -> Self::IntoTransformT;
-}
-
-// Automatically provides implementation of `IntoTransform` trait for all `Transform` implementations.
-impl<T: Transform> IntoTransform for T {
-    type Input = T::Input;
-    type Output = T::Output;
-    type IntoTransformT = T;
-
-    fn into_transform(self) -> T {
-        self
-    }
-}
-
 /// Composes a `Transform<A, B>` with another `Transform<B, C>` to produce a new `Transform<A, C>`.
 pub const fn composed_tx<LHS, RHS>(lhs: LHS, rhs: RHS) -> ComposedTransform<LHS, RHS>
     where LHS: Transform, RHS: Transform<Input=LHS::Output>

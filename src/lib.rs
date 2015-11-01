@@ -18,10 +18,14 @@
 mod macros;
 
 mod transform;
+mod path;
 mod lens;
+mod lens_tx;
 
 pub use self::macros::*;
-pub use self::lens::*;
 pub use self::transform::*;
+pub use self::path::*;
+pub use self::lens::*;
+pub use self::lens_tx::*;
 
 extern crate num;
