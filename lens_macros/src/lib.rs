@@ -10,7 +10,8 @@ extern crate syntax;
 extern crate rustc;
 
 use syntax::ast;
-use syntax::ast::{Ident, Item, ItemStruct, MetaItem, StructFieldKind, TokenTree, TtToken, TtDelimited, VariantData};
+use syntax::ast::{Ident, Item, ItemStruct, MetaItem, StructFieldKind, TokenTree, VariantData};
+use syntax::ast::TokenTree::{Token, Delimited};
 use syntax::attr;
 use syntax::attr::AttrMetaMethods;
 use syntax::codemap::Span;
@@ -226,7 +227,7 @@ fn expand_lens(cx: &mut ExtCtxt, span: Span, args: &[TokenTree]) -> Box<MacResul
 
     // Extract the initial struct ident
     let mut struct_ident = match args[0] {
-        TtToken(_, token::Ident(ident, _)) => ident,
+        Token(_, token::Ident(ident, _)) => ident,
         _ => {
             cx.span_err(span, usage_error);
             return DummyResult::any(span);
@@ -242,13 +243,13 @@ fn expand_lens(cx: &mut ExtCtxt, span: Span, args: &[TokenTree]) -> Box<MacResul
     loop {
         // Determine whether this is a lens for a struct field (struct.field) or a vec element (vec[index])
         match field_tokens[token_index] {
-            TtToken(_, token::Dot) => {
+            Token(_, token::Dot) => {
                 // This is (hopefully) a struct field reference
                 token_index += 1;
 
                 // Extract the field name
                 let field_name = match field_tokens[token_index] {
-                    TtToken(_, token::Ident(ident, _)) => ident.name,
+                    Token(_, token::Ident(ident, _)) => ident.name,
                     _ => {
                         cx.span_err(span, usage_error);
                         return DummyResult::any(span);
@@ -260,7 +261,7 @@ fn expand_lens(cx: &mut ExtCtxt, span: Span, args: &[TokenTree]) -> Box<MacResul
 
                 // Add the lens identifier to the list of args
                 let lens_ident = token::str_to_ident(&lens_name);
-                lens_args.push(TtToken(span, token::Ident(lens_ident, token::IdentStyle::Plain)));
+                lens_args.push(Token(span, token::Ident(lens_ident, token::IdentStyle::Plain)));
 
                 // Stop when there are no more fields to parse
                 token_index += 1;
@@ -269,7 +270,7 @@ fn expand_lens(cx: &mut ExtCtxt, span: Span, args: &[TokenTree]) -> Box<MacResul
                 }
 
                 // We need to manually comma-separate the args that we'll pass to the compose_lens! macro
-                lens_args.push(TtToken(span, token::Comma));
+                lens_args.push(Token(span, token::Comma));
                 
                 // Resolve the type of the target, which will be used to construct the next lens name
                 // XXX: This is super evil!  We assume that there's a macro alongside each lens, and
@@ -290,13 +291,13 @@ fn expand_lens(cx: &mut ExtCtxt, span: Span, args: &[TokenTree]) -> Box<MacResul
                 struct_ident = token::str_to_ident(&target_type);
             }
             
-            TtDelimited(_, ref delimited) => {
+            Delimited(_, ref delimited) => {
                 // This is (hopefully) an index for a vec lens
                 // TODO: This pattern matching code is awful; needs cleanup
                 match **delimited {
                     ast::Delimited { delim: token::Bracket, tts: ref delimited_tts, .. } => {
                         match delimited_tts.as_slice() {
-                            [ref vec_index @ TtToken(_, token::Literal(token::Integer(_), _))] => {
+                            [ref vec_index @ Token(_, token::Literal(token::Integer(_), _))] => {
                                 // Extract the Vec element type
                                 // TODO: This is very fragile; need a safer way to identify the element type
                                 let vec_str = struct_ident.name.as_str().replace(" ", "");
@@ -316,7 +317,7 @@ fn expand_lens(cx: &mut ExtCtxt, span: Span, args: &[TokenTree]) -> Box<MacResul
                                 }
 
                                 // We need to manually comma-separate the args that we'll pass to the compose_lens! macro
-                                lens_args.push(TtToken(span, token::Comma));
+                                lens_args.push(Token(span, token::Comma));
 
                                 // Use the Vec element type as the source type for the next lens, if any
                                 struct_ident = vec_element_type;
