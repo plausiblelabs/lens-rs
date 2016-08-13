@@ -4,23 +4,26 @@
 //
 
 #![crate_type = "dylib"]
-#![feature(rustc_private, plugin_registrar, quote, slice_patterns, vec_push_all, convert)]
+#![feature(rustc_private, plugin_registrar, quote, slice_patterns)]
 
 extern crate syntax;
 extern crate rustc;
+extern crate rustc_plugin;
 
 use syntax::ast;
-use syntax::ast::{Ident, Item, ItemStruct, MetaItem, StructFieldKind, TokenTree, VariantData};
-use syntax::ast::TokenTree::{Token, Delimited};
+use syntax::ast::{Ident, Item, ItemKind, MetaItem, MetaItemKind, VariantData};
 use syntax::attr;
 use syntax::attr::AttrMetaMethods;
 use syntax::codemap::Span;
 use syntax::parse::token;
+use syntax::parse::token::Token;
 use syntax::parse::token::intern;
 use syntax::ext::base::{Annotatable, ExtCtxt, MacResult, MacEager, MultiItemDecorator, DummyResult, SyntaxExtension, expr_to_string};
 use syntax::print::pprust::ty_to_string;
 use syntax::ptr::P;
-use rustc::plugin::Registry;
+use syntax::tokenstream;
+use syntax::tokenstream::TokenTree;
+use rustc_plugin::Registry;
 
 #[plugin_registrar]
 pub fn plugin_registrar(reg: &mut Registry) {
@@ -36,14 +39,13 @@ impl MultiItemDecorator for LensedDecorator {
         match *item {
             Annotatable::Item(ref struct_item) => {
                 match struct_item.node {
-                    ItemStruct(VariantData::Struct(ref struct_fields, _), _) => {
-                        for (index, spanned_field) in struct_fields.iter().enumerate() {
-                            let field = &spanned_field.node;
-                            match field.kind {
-                                StructFieldKind::NamedField(ref ident, _) => {
-                                    let no_lens = field.attrs.iter().any(|attr| {
+                    ItemKind::Struct(VariantData::Struct(ref struct_fields, _), _) => {
+                        for (index, struct_field) in struct_fields.iter().enumerate() {
+                            match struct_field.ident {
+                                Some(ref ident) => {
+                                    let no_lens = struct_field.attrs.iter().any(|attr| {
                                         match attr.node.value.node {
-                                            ast::MetaWord(ref name) if name == &"NoLens" => {
+                                            MetaItemKind::Word(ref name) if name == &"NoLens" => {
                                                 attr::mark_used(&attr);
                                                 true
                                             }
@@ -53,10 +55,10 @@ impl MultiItemDecorator for LensedDecorator {
                                         }
                                     });
                                     if !no_lens {
-                                        derive_lens(cx, push, &struct_item, ident, &field.ty, index as u64);
+                                        derive_lens(cx, push, &struct_item, ident, &struct_field.ty, index as u64);
                                     }
                                 }
-                                _ => {
+                                None => {
                                     cx.span_err(mitem.span, "`Lensed` may only be applied to structs with named fields");
                                     return;
                                 }
@@ -96,6 +98,9 @@ fn derive_lens(cx: &mut ExtCtxt, push: &mut FnMut(Annotatable), existing_item: &
     // Push the lens struct declaration item
     let lens_visibility = match existing_item.vis {
         ast::Visibility::Public => quote_tokens!(cx, pub),
+        // TODO: Handle `Crate` and `Restricted` visibliity
+        ast::Visibility::Crate(..) => quote_tokens!(cx, ),
+        ast::Visibility::Restricted { .. } => quote_tokens!(cx, ),
         ast::Visibility::Inherited => quote_tokens!(cx, )
     };
     push_new_item(push, existing_item, quote_item!(
@@ -227,7 +232,7 @@ fn expand_lens(cx: &mut ExtCtxt, span: Span, args: &[TokenTree]) -> Box<MacResul
 
     // Extract the initial struct ident
     let mut struct_ident = match args[0] {
-        Token(_, token::Ident(ident, _)) => ident,
+        TokenTree::Token(_, Token::Ident(ident)) => ident,
         _ => {
             cx.span_err(span, usage_error);
             return DummyResult::any(span);
@@ -243,13 +248,13 @@ fn expand_lens(cx: &mut ExtCtxt, span: Span, args: &[TokenTree]) -> Box<MacResul
     loop {
         // Determine whether this is a lens for a struct field (struct.field) or a vec element (vec[index])
         match field_tokens[token_index] {
-            Token(_, token::Dot) => {
+            TokenTree::Token(_, Token::Dot) => {
                 // This is (hopefully) a struct field reference
                 token_index += 1;
 
                 // Extract the field name
                 let field_name = match field_tokens[token_index] {
-                    Token(_, token::Ident(ident, _)) => ident.name,
+                    TokenTree::Token(_, Token::Ident(ident)) => ident.name,
                     _ => {
                         cx.span_err(span, usage_error);
                         return DummyResult::any(span);
@@ -261,7 +266,7 @@ fn expand_lens(cx: &mut ExtCtxt, span: Span, args: &[TokenTree]) -> Box<MacResul
 
                 // Add the lens identifier to the list of args
                 let lens_ident = token::str_to_ident(&lens_name);
-                lens_args.push(Token(span, token::Ident(lens_ident, token::IdentStyle::Plain)));
+                lens_args.push(TokenTree::Token(span, Token::Ident(lens_ident)));
 
                 // Stop when there are no more fields to parse
                 token_index += 1;
@@ -270,7 +275,7 @@ fn expand_lens(cx: &mut ExtCtxt, span: Span, args: &[TokenTree]) -> Box<MacResul
                 }
 
                 // We need to manually comma-separate the args that we'll pass to the compose_lens! macro
-                lens_args.push(Token(span, token::Comma));
+                lens_args.push(TokenTree::Token(span, Token::Comma));
                 
                 // Resolve the type of the target, which will be used to construct the next lens name
                 // XXX: This is super evil!  We assume that there's a macro alongside each lens, and
@@ -291,13 +296,13 @@ fn expand_lens(cx: &mut ExtCtxt, span: Span, args: &[TokenTree]) -> Box<MacResul
                 struct_ident = token::str_to_ident(&target_type);
             }
             
-            Delimited(_, ref delimited) => {
+            TokenTree::Delimited(_, ref delimited) => {
                 // This is (hopefully) an index for a vec lens
                 // TODO: This pattern matching code is awful; needs cleanup
                 match **delimited {
-                    ast::Delimited { delim: token::Bracket, tts: ref delimited_tts, .. } => {
+                    tokenstream::Delimited { delim: token::Bracket, tts: ref delimited_tts, .. } => {
                         match delimited_tts.as_slice() {
-                            [ref vec_index @ Token(_, token::Literal(token::Integer(_), _))] => {
+                            &[ref vec_index @ TokenTree::Token(_, Token::Literal(token::Integer(_), _))] => {
                                 // Extract the Vec element type
                                 // TODO: This is very fragile; need a safer way to identify the element type
                                 let vec_str = struct_ident.name.as_str().replace(" ", "");
@@ -308,7 +313,7 @@ fn expand_lens(cx: &mut ExtCtxt, span: Span, args: &[TokenTree]) -> Box<MacResul
                                 let vec_element_type = token::str_to_ident(&vec_str[4..vec_str.len() - 1]);
                                 
                                 // Add the vec_lens function call to the list of args
-                                lens_args.push_all(&quote_tokens!(cx, vec_lens::<$vec_element_type>($vec_index)));
+                                lens_args.extend_from_slice(&quote_tokens!(cx, vec_lens::<$vec_element_type>($vec_index)));
 
                                 // Stop when there are no more fields to parse
                                 token_index += 1;
@@ -317,7 +322,7 @@ fn expand_lens(cx: &mut ExtCtxt, span: Span, args: &[TokenTree]) -> Box<MacResul
                                 }
 
                                 // We need to manually comma-separate the args that we'll pass to the compose_lens! macro
-                                lens_args.push(Token(span, token::Comma));
+                                lens_args.push(TokenTree::Token(span, Token::Comma));
 
                                 // Use the Vec element type as the source type for the next lens, if any
                                 struct_ident = vec_element_type;
