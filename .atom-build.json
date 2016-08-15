@@ -1,0 +1,33 @@
+{
+  "cmd": "{PROJECT_PATH}/.atom/cargo.sh",
+  "name": "build",
+  "args": ["{PROJECT_PATH}", "{FILE_ACTIVE_PATH}", "build"],
+  "cwd": "{PROJECT_PATH}",
+  "errorMatch": [
+    "(?<file>.+.rs):(?<line>\\d+):(?<col>\\d+):",
+    "thread '[^\\']+' panicked at '[^\\']+', (?<file>[^\\/][^\\:]+):(?<line>\\d+)"
+  ],
+  "targets": {
+    "test": {
+      "cmd": "{PROJECT_PATH}/.atom/cargo.sh",
+      "args": ["{PROJECT_PATH}", "{FILE_ACTIVE_PATH}", "test"],
+      "cwd": "{PROJECT_PATH}",
+      "keymap": "cmd-u",
+      "errorMatch": [
+        "(?<file>.+.rs):(?<line>\\d+):(?<col>\\d+):",
+        "at (?<file>[^.\/][^\\/][^\\:]+):(?<line>\\d+)",
+        "thread '[^\\']+' panicked at '[^\\']+', (?<file>[^\\/][^\\:]+):(?<line>\\d+)"
+      ]
+    },
+    "run": {
+      "cmd": "{PROJECT_PATH}/.atom/cargo.sh",
+      "args": ["{PROJECT_PATH}", "{FILE_ACTIVE_PATH}", "run"],
+      "cwd": "{PROJECT_PATH}",
+      "errorMatch": [
+        "(?<file>.+.rs):(?<line>\\d+):(?<col>\\d+):",
+        "at (?<file>[^.\/][^\\/][^\\:]+):(?<line>\\d+)",
+        "thread '[^\\']+' panicked at '[^\\']+', (?<file>[^\\/][^\\:]+):(?<line>\\d+)"
+      ]
+    }
+  }
+}
