@@ -110,12 +110,11 @@ impl<L: ValueLens + ?Sized> ValueLens for Box<L> {
 }
 
 /// Returns a `Lens` over a single element at the given `index` for a `Vec<T>`.
-pub const fn vec_lens<T>(index: usize) -> VecLens<T> {
+pub const fn vec_lens<T>(index: usize) -> impl RefLens<Source=Vec<T>, Target=T> {
     VecLens { index: index, _marker: PhantomData::<T> }
 }
 
-#[doc(hidden)]
-pub struct VecLens<T> {
+struct VecLens<T> {
     index: usize,
     _marker: PhantomData<T>
 }
@@ -160,7 +159,6 @@ pub const fn compose<LHS, RHS>(lhs: LHS, rhs: RHS) -> ComposedLens<LHS, RHS>
 /// ```
 ///     compose(Lens<A, B>, Lens<B, C>) -> Lens<A, C>
 /// ```
-#[doc(hidden)]
 pub struct ComposedLens<LHS, RHS> {
     /// The left-hand side of the composition.
     lhs: LHS,

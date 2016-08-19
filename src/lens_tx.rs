@@ -10,46 +10,45 @@ use num::{PrimInt, One};
 use lens::*;
 use transform::*;
 
-/// Creates a new `LensSetTransform` for the given lens and function.
-pub fn set_tx<L, F>(lens: L, func: F) -> LensSetTransform<L, F>
+/// A transform that invokes a lens `set` operation with the output of the given function.
+pub fn set_tx<L, F>(lens: L, func: F) -> impl Transform<Input=L::Source, Output=L::Source>
     where L: Lens, F: Fn(&L::Source) -> L::Target
 {
     LensSetTransform { lens: lens, func: func }
 }
 
-/// Creates a new `LensModifyTransform` for the given lens and function.
-pub fn mod_tx<L, F>(lens: L, func: F) -> LensModifyTransform<L, F>
-    where L: Lens, F: Fn(&L::Target) -> L::Target
+/// A transform that invokes a lens `modify` operation with the given function.
+pub fn mod_tx<L, F>(lens: L, func: F) -> impl Transform<Input=L::Source, Output=L::Source>
+    where L: RefLens, F: Fn(&L::Target) -> L::Target
 {
     LensModifyTransform { lens: lens, func: func }
 }
 
-/// Creates a new `LensIncrementTransform` for the given lens.
-pub fn increment_tx<L>(lens: L) -> LensIncrementTransform<L>
-    where L: Lens, L::Target: PrimInt
+/// A transform that increments the integral target value for the given lens.
+pub fn increment_tx<L>(lens: L) -> impl Transform<Input=L::Source, Output=L::Source>
+    where L: RefLens, L::Target: PrimInt
 {
     // TODO: Ideally we would piggyback on `mod_tx` for this, but that would probably require removing `F` from
     // the type signature one way or another
     LensIncrementTransform { lens: lens }
 }
 
-/// Creates a new `LensDecrementTransform` for the given lens.
-pub fn decrement_tx<L>(lens: L) -> LensDecrementTransform<L>
-    where L: Lens, L::Target: PrimInt
+/// A transform that decrements the integral target value for the given lens.
+pub fn decrement_tx<L>(lens: L) -> impl Transform<Input=L::Source, Output=L::Source>
+    where L: RefLens, L::Target: PrimInt
 {
     LensDecrementTransform { lens: lens }
 }
 
-/// Creates a new `LensNotTransform` for the given lens.
-pub fn not_tx<T, L>(lens: L) -> LensNotTransform<L>
-    where L: Lens<Target=T>, T: Not<Output=T> + Clone
+/// A transform that negates the boolean target value for the underlying lens.
+pub fn not_tx<T, L>(lens: L) -> impl Transform<Input=L::Source, Output=L::Source>
+    where L: RefLens<Target=T>, T: Not<Output=T> + Clone
 {
     LensNotTransform { lens: lens }
 }
 
 /// A transform that invokes a lens `set` operation with the output of the given function.
-#[doc(hidden)]
-pub struct LensSetTransform<L, F> {
+struct LensSetTransform<L, F> {
     /// The underlying lens.
     lens: L,
 
@@ -70,8 +69,7 @@ impl<L, F> Transform for LensSetTransform<L, F>
 }
 
 /// A transform that invokes a lens `modify` operation with the given function.
-#[doc(hidden)]
-pub struct LensModifyTransform<L, F> {
+struct LensModifyTransform<L, F> {
     /// The underlying lens.
     lens: L,
 
@@ -92,8 +90,7 @@ impl<L, F> Transform for LensModifyTransform<L, F>
 }
 
 /// A transform that increments the integral target value of the underlying lens.
-#[doc(hidden)]
-pub struct LensIncrementTransform<L> {
+struct LensIncrementTransform<L> {
     /// The underlying lens.
     lens: L
 }
@@ -111,8 +108,7 @@ impl<L> Transform for LensIncrementTransform<L>
 }
 
 /// A transform that decrements the integral target value of the underlying lens.
-#[doc(hidden)]
-pub struct LensDecrementTransform<L> {
+struct LensDecrementTransform<L> {
     /// The underlying lens.
     lens: L
 }
@@ -130,8 +126,7 @@ impl<L> Transform for LensDecrementTransform<L>
 }
 
 /// A transform that applies a unary `!` to the boolean target value of the underlying lens.
-#[doc(hidden)]
-pub struct LensNotTransform<L> {
+struct LensNotTransform<L> {
     /// The underlying lens.
     lens: L
 }

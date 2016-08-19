@@ -18,7 +18,7 @@ pub trait Transform {
 }
 
 /// Composes a `Transform<A, B>` with another `Transform<B, C>` to produce a new `Transform<A, C>`.
-pub const fn composed_tx<LHS, RHS>(lhs: LHS, rhs: RHS) -> ComposedTransform<LHS, RHS>
+pub const fn composed_tx<LHS, RHS>(lhs: LHS, rhs: RHS) -> impl Transform<Input=LHS::Input, Output=RHS::Output>
     where LHS: Transform, RHS: Transform<Input=LHS::Output>
 {
     ComposedTransform { lhs: lhs, rhs: rhs }
@@ -30,8 +30,7 @@ pub const fn composed_tx<LHS, RHS>(lhs: LHS, rhs: RHS) -> ComposedTransform<LHS,
 /// ```
 ///     compose(Transform<A, B>, Transform<B, C>) -> Transform<A, C>
 /// ```
-#[doc(hidden)]
-pub struct ComposedTransform<LHS, RHS> {
+struct ComposedTransform<LHS, RHS> {
     /// The left-hand side of the composition.
     lhs: LHS,
 
@@ -51,12 +50,11 @@ impl<LHS, RHS> Transform for ComposedTransform<LHS, RHS>
 }
 
 /// The identity transform that simply passes the input data through as the output.
-pub fn identity_tx<X>() -> IdentityTransform<X> {
+pub fn identity_tx<X>() -> impl Transform<Input=X, Output=X> {
     IdentityTransform { _marker: PhantomData::<X> }
 }
 
-#[doc(hidden)]
-pub struct IdentityTransform<X> {
+struct IdentityTransform<X> {
     _marker: PhantomData<X>
 }
 
@@ -70,14 +68,13 @@ impl<X> Transform for IdentityTransform<X> {
 }
 
 /// A transform that applies a given function to the input.
-pub fn fn_tx<X, Y, F>(f: F) -> FnTransform<X, Y, F>
+pub fn fn_tx<X, Y, F>(f: F) -> impl Transform<Input=X, Output=Y>
     where F: Fn(X) -> Y
 {
     FnTransform { func: f, _x_marker: PhantomData::<X>, _y_marker: PhantomData::<Y> }
 }
 
-#[doc(hidden)]
-pub struct FnTransform<X, Y, F> {
+struct FnTransform<X, Y, F> {
     /// A closure that takes the transform input value and produces an output value.
     func: F,
     _x_marker: PhantomData<X>,
