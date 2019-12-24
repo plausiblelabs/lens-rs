@@ -13,7 +13,7 @@ pub struct LensPathElement {
 
 impl LensPathElement {
     pub fn new(id: u64) -> LensPathElement {
-        LensPathElement { id: id }
+        LensPathElement { id }
     }
 }
 
@@ -33,7 +33,7 @@ impl LensPath {
     /// Creates a new `LensPath` with a single element.
     pub fn new(id: u64) -> LensPath {
         LensPath {
-            elements: vec![LensPathElement { id: id }],
+            elements: vec![LensPathElement { id }],
         }
     }
 
@@ -62,7 +62,7 @@ impl LensPath {
     pub fn concat(lhs: LensPath, rhs: LensPath) -> LensPath {
         let mut elements = lhs.elements;
         elements.extend(&rhs.elements);
-        LensPath { elements: elements }
+        LensPath { elements }
     }
 }
 
