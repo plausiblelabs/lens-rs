@@ -63,11 +63,11 @@ pub fn lens(input: TokenStream) -> TokenStream {
     let mut lens_expr = quote!(#base_lens_expr.#child_field_name);
     let mut lens_exprs: Vec<TokenStream2> = vec![lens_expr.clone()];
 
-    for i in 2..lens_parts.len() {
+    for lens_part in lens_parts.iter().skip(2) {
         let prev_base_lens_expr = base_lens_expr.clone();
         let prev_child_field_name = child_field_name.clone();
         parent_lenses_name = format_ident!("{}_lenses", prev_child_field_name);
-        child_field_name = format_ident!("{}", lens_parts[i]);
+        child_field_name = format_ident!("{}", lens_part);
         base_lens_expr = quote!(#prev_base_lens_expr.#parent_lenses_name);
         lens_expr = quote!(#base_lens_expr.#child_field_name);
         lens_exprs.push(lens_expr.clone());
@@ -113,7 +113,7 @@ fn extract_lens_parts(field_access: &ExprField) -> Result<Vec<String>, syn::Erro
     // Append the field name
     base_parts.and_then(|parts| {
         if let Member::Named(field_ident) = &field_access.member {
-            let mut new_parts = parts.clone();
+            let mut new_parts = parts;
             new_parts.push(field_ident.to_string());
             Ok(new_parts)
         } else {

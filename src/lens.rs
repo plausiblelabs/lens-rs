@@ -184,7 +184,7 @@ where
     LHS::Target: 'static,
     RHS: Lens<Source = LHS::Target>,
 {
-    ComposedLens { lhs: lhs, rhs: rhs }
+    ComposedLens { lhs, rhs }
 }
 
 /// Composes two `Lens`es.
