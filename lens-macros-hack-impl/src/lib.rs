@@ -9,8 +9,8 @@ use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use proc_macro_hack::proc_macro_hack;
 use quote::{format_ident, quote};
-use syn::{parse_macro_input, Expr, ExprField, Member};
 use syn::spanned::Spanned;
+use syn::{parse_macro_input, Expr, ExprField, Member};
 
 #[proc_macro_hack]
 pub fn lens(input: TokenStream) -> TokenStream {
@@ -117,7 +117,10 @@ fn extract_lens_parts(field_access: &ExprField) -> Result<Vec<String>, syn::Erro
             new_parts.push(field_ident.to_string());
             Ok(new_parts)
         } else {
-            Err(syn::Error::new(field_access.span(), "lens!() only works with named fields, e.g. `Struct.outer_field.inner_field`"))
+            Err(syn::Error::new(
+                field_access.span(),
+                "lens!() only works with named fields, e.g. `Struct.outer_field.inner_field`",
+            ))
         }
     })
 }

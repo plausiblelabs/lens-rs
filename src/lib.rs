@@ -14,8 +14,8 @@ pub use pl_lens_macros_hack::*;
 mod macros;
 pub use self::macros::*;
 
-mod path;
 mod lens;
+mod path;
 
-pub use self::path::*;
 pub use self::lens::*;
+pub use self::path::*;

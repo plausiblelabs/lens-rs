@@ -18,7 +18,7 @@ pub trait Lens {
 
     /// Returns a `LensPath` that describes the target of this lens relative to its source.
     fn path(&self) -> LensPath;
-    
+
     /// Sets the target of the lens. (This requires a mutable source reference, and as such is typically
     /// only used internally.)
     #[doc(hidden)]
@@ -45,13 +45,21 @@ pub trait RefLens: Lens {
     fn get_mut_ref<'a>(&self, source: &'a mut Self::Source) -> &'a mut Self::Target;
 
     /// Modifies the target of the lens by applying a function to the current value.
-    fn mutate_with_fn<'a>(&self, source: &'a mut Self::Source, f: &dyn Fn(&Self::Target) -> Self::Target) {
+    fn mutate_with_fn<'a>(
+        &self,
+        source: &'a mut Self::Source,
+        f: &dyn Fn(&Self::Target) -> Self::Target,
+    ) {
         let target = f(self.get_ref(source));
         self.mutate(source, target);
     }
 
     /// Modifies the target of the lens by applying a function to the current value.  This consumes the source.
-    fn modify(&self, source: Self::Source, f: &dyn Fn(&Self::Target) -> Self::Target) -> Self::Source {
+    fn modify(
+        &self,
+        source: Self::Source,
+        f: &dyn Fn(&Self::Target) -> Self::Target,
+    ) -> Self::Source {
         let mut mutable_source = source;
         {
             self.mutate_with_fn(&mut mutable_source, f);
@@ -71,7 +79,8 @@ pub trait ValueLens: Lens {
 /// still allow for static dispatch on the given closure.)
 #[doc(hidden)]
 pub fn mutate_with_fn<'a, L: RefLens, F>(lens: &L, source: &'a mut L::Source, f: F)
-    where F: Fn(&L::Target) -> L::Target
+where
+    F: Fn(&L::Target) -> L::Target,
 {
     let target = f(lens.get_ref(source));
     lens.mutate(source, target);
@@ -81,7 +90,8 @@ pub fn mutate_with_fn<'a, L: RefLens, F>(lens: &L, source: &'a mut L::Source, f:
 /// (This lives outside the `Lens` trait to allow lenses to be object-safe but
 /// still allow for static dispatch on the given closure.)
 pub fn modify<L: RefLens, F>(lens: &L, source: L::Source, f: F) -> L::Source
-    where F: Fn(&L::Target) -> L::Target
+where
+    F: Fn(&L::Target) -> L::Target,
 {
     let mut mutable_source = source;
     {
@@ -169,7 +179,10 @@ impl<L: ValueLens + ?Sized> ValueLens for Box<L> {
 // pub const fn compose<LHS, RHS>(lhs: LHS, rhs: RHS) -> ComposedLens<LHS, RHS>
 //     where LHS: RefLens, LHS::Target: 'static, RHS: Lens<Source=LHS::Target>
 pub fn compose<LHS, RHS>(lhs: LHS, rhs: RHS) -> ComposedLens<LHS, RHS>
-where LHS: RefLens, LHS::Target: 'static, RHS: Lens<Source=LHS::Target>
+where
+    LHS: RefLens,
+    LHS::Target: 'static,
+    RHS: Lens<Source = LHS::Target>,
 {
     ComposedLens { lhs: lhs, rhs: rhs }
 }
@@ -185,11 +198,14 @@ pub struct ComposedLens<LHS, RHS> {
     lhs: LHS,
 
     /// The right-hand side of the composition.
-    rhs: RHS
+    rhs: RHS,
 }
 
 impl<LHS, RHS> Lens for ComposedLens<LHS, RHS>
-    where LHS: RefLens, LHS::Target: 'static, RHS: Lens<Source=LHS::Target>
+where
+    LHS: RefLens,
+    LHS::Target: 'static,
+    RHS: Lens<Source = LHS::Target>,
 {
     type Source = LHS::Source;
     type Target = RHS::Target;
@@ -207,7 +223,10 @@ impl<LHS, RHS> Lens for ComposedLens<LHS, RHS>
 }
 
 impl<LHS, RHS> RefLens for ComposedLens<LHS, RHS>
-    where LHS: RefLens, LHS::Target: 'static, RHS: RefLens<Source=LHS::Target>
+where
+    LHS: RefLens,
+    LHS::Target: 'static,
+    RHS: RefLens<Source = LHS::Target>,
 {
     #[inline(always)]
     fn get_ref<'a>(&self, source: &'a LHS::Source) -> &'a RHS::Target {
@@ -221,7 +240,10 @@ impl<LHS, RHS> RefLens for ComposedLens<LHS, RHS>
 }
 
 impl<LHS, RHS> ValueLens for ComposedLens<LHS, RHS>
-    where LHS: RefLens, LHS::Target: 'static, RHS: ValueLens<Source=LHS::Target>
+where
+    LHS: RefLens,
+    LHS::Target: 'static,
+    RHS: ValueLens<Source = LHS::Target>,
 {
     #[inline(always)]
     fn get(&self, source: &LHS::Source) -> RHS::Target {
@@ -238,26 +260,26 @@ mod tests {
     #[derive(Clone, Debug, PartialEq, Lenses)]
     struct Struct1 {
         int32: i32,
-        int16: i16
+        int16: i16,
     }
 
     #[derive(Clone, Debug, PartialEq, Lenses)]
     struct Struct2 {
         int32: i32,
         string: String,
-        struct1: Struct1
+        struct1: Struct1,
     }
 
     #[derive(Clone, Debug, PartialEq, Lenses)]
     struct Struct3 {
         int32: i32,
-        struct2: Struct2
+        struct2: Struct2,
     }
 
-//     #[derive(Clone, Debug, PartialEq, Lenses)]
-//     struct Struct4 {
-//         inner_vec: Vec<Struct1>
-//     }
+    //     #[derive(Clone, Debug, PartialEq, Lenses)]
+    //     struct Struct4 {
+    //         inner_vec: Vec<Struct1>
+    //     }
 
     #[test]
     fn a_basic_lens_should_work() {
@@ -270,9 +292,9 @@ mod tests {
                 string: "hi".to_string(),
                 struct1: Struct1 {
                     int32: 132,
-                    int16: 116
-                }
-            }
+                    int16: 116,
+                },
+            },
         };
         assert_eq!(*lens.get_ref(&s3_0), 132);
 
@@ -289,41 +311,46 @@ mod tests {
         assert_eq!(s3_3.struct2.struct1.int16, 116);
     }
 
-//     #[test]
-//     fn a_vec_lens_should_work() {
-//         let lens = vec_lens::<u32>(1);
+    //     #[test]
+    //     fn a_vec_lens_should_work() {
+    //         let lens = vec_lens::<u32>(1);
 
-//         let v0 = vec!(0u32, 1, 2);
-//         assert_eq!(*lens.get_ref(&v0), 1);
+    //         let v0 = vec!(0u32, 1, 2);
+    //         assert_eq!(*lens.get_ref(&v0), 1);
 
-//         let v1 = lens.set(v0, 42);
-//         assert_eq!(v1, vec!(0u32, 42, 2));
+    //         let v1 = lens.set(v0, 42);
+    //         assert_eq!(v1, vec!(0u32, 42, 2));
 
-//         let v2 = modify(&lens, v1, |a| a - 1);
-//         assert_eq!(v2, vec!(0u32, 41, 2));
-//     }
+    //         let v2 = modify(&lens, v1, |a| a - 1);
+    //         assert_eq!(v2, vec!(0u32, 41, 2));
+    //     }
 
-//     #[test]
-//     fn the_lens_macro_should_support_vec_indexing() {
-//         let lens = lens!(Struct4.inner_vec[1].foo);
+    //     #[test]
+    //     fn the_lens_macro_should_support_vec_indexing() {
+    //         let lens = lens!(Struct4.inner_vec[1].foo);
 
-//         let s0 = Struct4 { inner_vec: vec!(
-//             Struct1 { foo: 42, bar: 73 },
-//             Struct1 { foo: 110, bar: 210 }
-//         )};
-//         assert_eq!(*lens.get_ref(&s0), 110);
+    //         let s0 = Struct4 { inner_vec: vec!(
+    //             Struct1 { foo: 42, bar: 73 },
+    //             Struct1 { foo: 110, bar: 210 }
+    //         )};
+    //         assert_eq!(*lens.get_ref(&s0), 110);
 
-//         let s1 = lens.set(s0, 111);
-//         assert_eq!(s1.inner_vec[1].foo, 111);
+    //         let s1 = lens.set(s0, 111);
+    //         assert_eq!(s1.inner_vec[1].foo, 111);
 
-//         let s2 = modify(&lens, s1, |a| a + 1);
-//         assert_eq!(s2.inner_vec[1].foo, 112);
-//     }
-    
+    //         let s2 = modify(&lens, s1, |a| a + 1);
+    //         assert_eq!(s2.inner_vec[1].foo, 112);
+    //     }
+
     #[test]
     fn lens_composition_should_work_with_boxed_lenses() {
-        let struct1_int32_lens: Box<dyn RefLens<Source=Struct1, Target=i32>> = Box::new(Struct1Int32Lens);
-        let lens = compose_lens!(Struct3Struct2Lens, Box::new(Struct2Struct1Lens), struct1_int32_lens);
+        let struct1_int32_lens: Box<dyn RefLens<Source = Struct1, Target = i32>> =
+            Box::new(Struct1Int32Lens);
+        let lens = compose_lens!(
+            Struct3Struct2Lens,
+            Box::new(Struct2Struct1Lens),
+            struct1_int32_lens
+        );
 
         let s3_0 = Struct3 {
             int32: 332,
@@ -332,9 +359,9 @@ mod tests {
                 string: "hi".to_string(),
                 struct1: Struct1 {
                     int32: 132,
-                    int16: 116
-                }
-            }
+                    int16: 116,
+                },
+            },
         };
         assert_eq!(*lens.get_ref(&s3_0), 132);
 
