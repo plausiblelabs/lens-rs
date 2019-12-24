@@ -1,24 +1,18 @@
 //
-// Copyright (c) 2016 Plausible Labs Cooperative, Inc.
+// Copyright (c) 2016-2019 Plausible Labs Cooperative, Inc.
 // All rights reserved.
 //
 
-#![feature(plugin, custom_attribute)]
-#![plugin(lens_macros)]
+use pl_lens::*;
 
-#[macro_use]
-extern crate lens;
-
-use lens::*;
-
-#[Lensed]
+#[derive(Lenses)]
 struct Address {
     street: String,
     city: String,
     postcode: String
 }
 
-#[Lensed]
+#[derive(Lenses)]
 struct Person {
     name: String,
     age: u8,
@@ -42,30 +36,4 @@ fn a_simple_nested_data_structure_should_be_lensable() {
     let p1 = lens!(Person.address.street).set(p0, "666 Titus Ave".to_string());
     assert_eq!(lens!(Person.name).get_ref(&p1), "Pop Zeus");
     assert_eq!(lens!(Person.address.street).get_ref(&p1), "666 Titus Ave");
-}
-
-#[Lensed]
-struct Header {
-    count: u16
-}
-
-#[Lensed]
-struct Packet {
-    header: Header,
-    data: Vec<u8>
-}
-
-#[test]
-fn a_simple_nested_data_structure_should_be_transformable() {
-    let count_lens = || { lens!(Packet.header.count) };
-    let add_one = increment_tx(count_lens());
-    let add_two = mod_tx(count_lens(), |c| c + 2);
-    let mul_two = mod_tx(count_lens(), |c| c * 2);
-    let tx = compose_tx!(add_one, add_two, mul_two);
-    
-    let p0 = Packet { header: Header { count: 0 }, data: vec![] };
-    let p1 = tx.apply(p0);
-    assert_eq!(p1.header.count, 6);
-    let p2 = tx.apply(p1);
-    assert_eq!(p2.header.count, 18);
 }

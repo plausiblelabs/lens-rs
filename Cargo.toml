@@ -1,10 +1,20 @@
 [package]
-name = "lens"
-version = "0.0.1"
+name = "pl-lens"
+version = "1.0.0"
+edition = "2018"
 authors = ["Chris Campbell <campbell@plausible.coop>"]
+license = "MIT"
+description = "Provides support for lenses, which are a mechanism in functional programming for focusing on a part of a complex data structure."
+keywords = ["plausible", "lens", "functional"]
+homepage = "https://github.com/plausiblelabs/lens-rs"
+repository = "https://github.com/plausiblelabs/lens-rs"
+readme = "README.md"
+
+[badges]
+travis-ci = { repository = "plausiblelabs/lens-rs" }
 
 [dependencies]
-num = "0.1.24"
+pl-lens-macros = { path = "lens-macros", version = "1.0.0" }
+pl-lens-macros-hack = { path = "lens-macros-hack", version = "1.0.0" }
 
-[dependencies.lens_macros]
-path = "lens_macros"
+[workspace]

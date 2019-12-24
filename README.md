@@ -1,4 +1,18 @@
-# lens-rs
+# pl-lens
+
+[![Build Status][travis-badge]][travis-url]
+[![Crates.io][crates-badge]][crates-url]
+[![Docs.rs][docs-badge]][docs-url]
+[![MIT licensed][mit-badge]][mit-url]
+
+[travis-badge]: https://travis-ci.com/plausiblelabs/lens-rs.svg?branch=master
+[travis-url]: https://travis-ci.com/plausiblelabs/lens-rs
+[crates-badge]: https://img.shields.io/crates/v/pl-lens.svg
+[crates-url]: https://crates.io/crates/pl-lens
+[docs-badge]: https://docs.rs/pl-lens/badge.svg
+[docs-url]: https://docs.rs/pl-lens
+[mit-badge]: https://img.shields.io/badge/license-MIT-blue.svg
+[mit-url]: LICENSE
 
 This Rust library provides support for lenses, which are a mechanism in functional programming for focusing on a part of a complex data structure.
 
@@ -8,21 +22,13 @@ Add a dependency (or two) to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-lens = { git = "https://opensource.plausible.coop/src/scm/rc/lens-rs.git" }
-lens_macros = { git = "https://opensource.plausible.coop/src/scm/rc/lens-rs.git" }
+pl-lens = "1.0"
 ```
 
 Then, in your crate:
 
 ```rust
-// The following allows for using macros defined in the separate lens_macros crate.
-#![feature(plugin, custom_attribute)]
-#![plugin(lens_macros)]
-
-#[macro_use]
-extern crate lens;
-
-use lens::*;
+use pl_lens::*;
 ```
 
 ## Examples
@@ -30,14 +36,14 @@ use lens::*;
 A `Lens` can be used to transform a conceptually-immutable data structure by changing only a portion of the data.  Let's demonstrate with an example:
 
 ```rust
-#[Lensed]
+#[derive(Lenses)]
 struct Address {
     street: String,
     city: String,
     postcode: String
 }
 
-#[Lensed]
+#[derive(Lenses)]
 struct Person {
     name: String,
     age: u8,
@@ -61,33 +67,6 @@ assert_eq!(lens!(Person.name).get_ref(&p1), "Pop Zeus");
 assert_eq!(lens!(Person.address.street).get_ref(&p1), "666 Titus Ave");
 ```
 
-The `lens` crate also offers a simple `Transform` API and some built-in functions that can be used in conjunction with the `Lens` API to modify a data structure through a series of transforms.  For example:
-
-```rust
-#[Lensed]
-struct Header {
-    count: u16
-}
-
-#[Lensed]
-struct Packet {
-    header: Header,
-    data: Vec<u8>
-}
-
-let count_lens = || { lens!(Packet.header.count) };
-let add_one = increment_tx(count_lens());
-let add_two = mod_tx(count_lens(), |c| c + 2);
-let mul_two = mod_tx(count_lens(), |c| c * 2);
-let tx = compose_tx!(add_one, add_two, mul_two);
-
-let p0 = Packet { header: Header { count: 0 }, data: vec![] };
-let p1 = tx.apply(p0);
-assert_eq!(p1.header.count, 6);
-let p2 = tx.apply(p1);
-assert_eq!(p2.header.count, 18);
-```
-
 # License
 
-`lens-rs` is distributed under an MIT license.  See LICENSE for more details.
+`pl-lens` is distributed under an MIT license.  See LICENSE for more details.
