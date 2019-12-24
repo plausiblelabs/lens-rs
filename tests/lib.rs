@@ -9,14 +9,14 @@ use pl_lens::*;
 struct Address {
     street: String,
     city: String,
-    postcode: String
+    postcode: String,
 }
 
 #[derive(Lenses)]
 struct Person {
     name: String,
     age: u8,
-    address: Address
+    address: Address,
 }
 
 #[test]
@@ -27,12 +27,12 @@ fn a_simple_nested_data_structure_should_be_lensable() {
         address: Address {
             street: "123 Needmore Rd".to_string(),
             city: "Dayton".to_string(),
-            postcode: "99999".to_string()
-        }
+            postcode: "99999".to_string(),
+        },
     };
     assert_eq!(lens!(Person.name).get_ref(&p0), "Pop Zeus");
     assert_eq!(lens!(Person.address.street).get_ref(&p0), "123 Needmore Rd");
-    
+
     let p1 = lens!(Person.address.street).set(p0, "666 Titus Ave".to_string());
     assert_eq!(lens!(Person.name).get_ref(&p1), "Pop Zeus");
     assert_eq!(lens!(Person.address.street).get_ref(&p1), "666 Titus Ave");

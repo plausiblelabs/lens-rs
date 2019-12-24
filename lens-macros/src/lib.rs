@@ -42,17 +42,21 @@ pub fn lenses_derive(input: TokenStream) -> TokenStream {
         // TODO: Handle `Crate` and `Restricted` visibliity
         Visibility::Crate(..) => quote!(),
         Visibility::Restricted(..) => quote!(),
-        Visibility::Inherited => quote!()
+        Visibility::Inherited => quote!(),
     };
 
     // Generate lenses for each field in the struct
-    let lens_items = fields.iter().enumerate().map(|(index, field)|
+    let lens_items = fields.iter().enumerate().map(|(index, field)| {
         if let Some(field_name) = &field.ident {
             let field_index = index as u64;
             let field_type = &field.ty;
 
             // Build the Lens name from the struct name and field name (for example, "StructFieldLens")
-            let lens_name = format_ident!("{}{}Lens", struct_name.to_string(), to_camel_case(&field_name.to_string()));
+            let lens_name = format_ident!(
+                "{}{}Lens",
+                struct_name.to_string(),
+                to_camel_case(&field_name.to_string())
+            );
 
             // Build a `ValueLens` impl if the target is a primitive
             // TODO: Should do this automatically for any target type that implements `Clone`
@@ -115,7 +119,7 @@ pub fn lenses_derive(input: TokenStream) -> TokenStream {
             // only contains named fields
             panic!("`#[derive(Lenses)]` may only be applied to structs with named fields")
         }
-    );
+    });
 
     // Build a `<StructName>Lenses` struct that enumerates the available lenses
     // for each field in the struct, for example:
@@ -125,14 +129,19 @@ pub fn lenses_derive(input: TokenStream) -> TokenStream {
     //         struct1_lenses: Struct1Lenses
     //     }
     let lenses_struct_name = format_ident!("{}Lenses", struct_name);
-    let lenses_struct_fields = fields.iter().map(|field|
+    let lenses_struct_fields = fields.iter().map(|field| {
         if let Some(field_name) = &field.ident {
-            let field_lens_name = format_ident!("{}{}Lens", struct_name, to_camel_case(&field_name.to_string()));
+            let field_lens_name = format_ident!(
+                "{}{}Lens",
+                struct_name,
+                to_camel_case(&field_name.to_string())
+            );
             if is_primitive(&field.ty) {
                 quote!(#field_name: #field_lens_name)
             } else {
                 let field_parent_lenses_field_name = format_ident!("{}_lenses", field_name);
-                let field_parent_lenses_type_name = format_ident!("{}Lenses", to_camel_case(&field_name.to_string()));
+                let field_parent_lenses_type_name =
+                    format_ident!("{}Lenses", to_camel_case(&field_name.to_string()));
                 quote!(
                     #field_name: #field_lens_name,
                     #field_parent_lenses_field_name: #field_parent_lenses_type_name
@@ -143,7 +152,7 @@ pub fn lenses_derive(input: TokenStream) -> TokenStream {
             // only contains named fields
             panic!("`#[derive(Lenses)]` may only be applied to structs with named fields")
         }
-    );
+    });
     let lenses_struct = quote!(
         #[allow(dead_code)]
         #[doc(hidden)]
@@ -211,20 +220,27 @@ fn is_primitive(ty: &syn::Type) -> bool {
         // XXX: This is quick and dirty; we need a more reliable way to
         // know whether the field is a struct type for which there are
         // lenses derived
-        "i8" | "i16" | "i32" | "i64" | "u8" | "u16" | "u32" | "u64" | "f32" | "f64" | "String" => true,
-        _ => false
+        "i8" | "i16" | "i32" | "i64" | "u8" | "u16" | "u32" | "u64" | "f32" | "f64" | "String" => {
+            true
+        }
+        _ => false,
     }
 }
 
 // XXX: Lifted from librustc_lint/builtin.rs
 fn to_camel_case(s: &str) -> String {
-    s.split('_').flat_map(|word| word.chars().enumerate().map(|(i, c)|
-        if i == 0 {
-            c.to_uppercase().collect::<String>()
-        } else {
-            c.to_lowercase().collect()
-        }
-    )).collect::<Vec<_>>().concat()
+    s.split('_')
+        .flat_map(|word| {
+            word.chars().enumerate().map(|(i, c)| {
+                if i == 0 {
+                    c.to_uppercase().collect::<String>()
+                } else {
+                    c.to_lowercase().collect()
+                }
+            })
+        })
+        .collect::<Vec<_>>()
+        .concat()
 }
 
 #[cfg(test)]
