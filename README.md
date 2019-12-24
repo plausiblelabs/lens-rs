@@ -1,12 +1,12 @@
 # pl-lens
 
-[![Build Status][travis-badge]][travis-url]
+[![Build Status][gh-actions-badge]][gh-actions-url]
 [![Crates.io][crates-badge]][crates-url]
 [![Docs.rs][docs-badge]][docs-url]
 [![MIT licensed][mit-badge]][mit-url]
 
-[travis-badge]: https://travis-ci.com/plausiblelabs/lens-rs.svg?branch=master
-[travis-url]: https://travis-ci.com/plausiblelabs/lens-rs
+[gh-actions-badge]: https://github.com/plausiblelabs/lens-rs/workflows/Build/badge.svg?event=push
+[gh-actions-url]: https://github.com/plausiblelabs/lens-rs/actions?query=workflow%3ABuild+branch%3Amaster
 [crates-badge]: https://img.shields.io/crates/v/pl-lens.svg
 [crates-url]: https://crates.io/crates/pl-lens
 [docs-badge]: https://docs.rs/pl-lens/badge.svg
