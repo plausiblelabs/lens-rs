@@ -254,8 +254,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use pl_lens_macros::Lenses;
-    use pl_lens_macros_hack::lens;
+    use pl_lens_derive::Lenses;
 
     #[derive(Clone, Debug, PartialEq, Lenses)]
     struct Struct1 {
@@ -283,6 +282,7 @@ mod tests {
 
     #[test]
     fn a_basic_lens_should_work() {
+        #[allow(dead_code)]
         let lens = lens!(Struct3.struct2.struct1.int32);
 
         let s3_0 = Struct3 {
