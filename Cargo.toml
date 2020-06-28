@@ -14,7 +14,8 @@ readme = "README.md"
 travis-ci = { repository = "plausiblelabs/lens-rs" }
 
 [dependencies]
+pl-lens-derive = { path = "lens-derive", version = "1.0.0" }
 pl-lens-macros = { path = "lens-macros", version = "1.0.0" }
-pl-lens-macros-hack = { path = "lens-macros-hack", version = "1.0.0" }
+proc-macro-hack = "0.5"
 
 [workspace]

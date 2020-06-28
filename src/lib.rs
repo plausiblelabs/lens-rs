@@ -3,11 +3,24 @@
 // All rights reserved.
 //
 
-// Re-export the pl-lens-macros crate
-pub use pl_lens_macros::*;
+use proc_macro_hack::proc_macro_hack;
 
-// Re-export the pl-lens-macros-hack crate
-pub use pl_lens_macros_hack::*;
+// Re-export the pl-lens-derive crate
+pub use pl_lens_derive::*;
+
+/// This is a macro-based shorthand that allows us to write:
+///
+/// ```text,no_run
+///   lens!(SomeStruct.foo.bar_vec[3].baz)
+/// ```
+///
+/// instead of:
+///
+/// ```text,no_run
+///   compose_lens!(SomeStructFooLens, FooBarVecLens, vec_lens::<BarThing>(3), BarThingBazLens)
+/// ```
+#[proc_macro_hack]
+pub use pl_lens_macros::lens;
 
 // The following is necessary to make exported macros visible.
 #[macro_use]
