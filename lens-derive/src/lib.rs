@@ -63,7 +63,7 @@ pub fn lenses_derive(input: TokenStream) -> TokenStream {
             let value_lens = if is_primitive(&field.ty) {
                 quote!(
                     #[allow(dead_code)]
-                    impl ValueLens for #lens_name {
+                    impl pl_lens::ValueLens for #lens_name {
                         #[inline(always)]
                         fn get(&self, source: &#struct_name) -> #field_type {
                             (*source).#field_name.clone()
@@ -82,13 +82,13 @@ pub fn lenses_derive(input: TokenStream) -> TokenStream {
 
                 // Include the `Lens` impl
                 #[allow(dead_code)]
-                impl Lens for #lens_name {
+                impl pl_lens::Lens for #lens_name {
                     type Source = #struct_name;
                     type Target = #field_type;
 
                     #[inline(always)]
-                    fn path(&self) -> LensPath {
-                        LensPath::new(#field_index)
+                    fn path(&self) -> pl_lens::LensPath {
+                        pl_lens::LensPath::new(#field_index)
                     }
 
                     #[inline(always)]
@@ -99,7 +99,7 @@ pub fn lenses_derive(input: TokenStream) -> TokenStream {
 
                 // Include the `RefLens` impl
                 #[allow(dead_code)]
-                impl RefLens for #lens_name {
+                impl pl_lens::RefLens for #lens_name {
                     #[inline(always)]
                     fn get_ref<'a>(&self, source: &'a #struct_name) -> &'a #field_type {
                         &(*source).#field_name

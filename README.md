@@ -18,7 +18,7 @@ This Rust library provides support for lenses, which are a mechanism in function
 
 ## Usage
 
-Add a dependency (or two) to your `Cargo.toml`:
+Add a dependency to your `Cargo.toml`:
 
 ```toml
 [dependencies]
@@ -28,7 +28,14 @@ pl-lens = "1.0"
 Then, in your crate:
 
 ```rust
-use pl_lens::*;
+// To use the `derive(Lenses)` macro
+use pl_lens::Lenses;
+
+// To use the `lens!` macro
+use pl_lens::lens;
+
+// To bring trait methods like `get_ref` and `set` into scope
+use pl_lens::{Lens, RefLens};
 ```
 
 ## Examples
