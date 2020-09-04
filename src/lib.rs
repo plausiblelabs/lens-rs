@@ -3,6 +3,8 @@
 // All rights reserved.
 //
 
+extern crate self as pl_lens;
+
 use proc_macro_hack::proc_macro_hack;
 
 // Re-export the pl-lens-derive crate

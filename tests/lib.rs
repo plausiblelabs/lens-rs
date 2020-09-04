@@ -3,7 +3,7 @@
 // All rights reserved.
 //
 
-use pl_lens::*;
+use pl_lens::Lenses;
 
 #[derive(Lenses)]
 struct Address {
@@ -21,6 +21,8 @@ struct Person {
 
 #[test]
 fn a_simple_nested_data_structure_should_be_lensable() {
+    use pl_lens::{lens, Lens, RefLens};
+
     let p0 = Person {
         name: "Pop Zeus".to_string(),
         age: 58,

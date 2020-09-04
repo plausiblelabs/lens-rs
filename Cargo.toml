@@ -10,9 +10,6 @@ homepage = "https://github.com/plausiblelabs/lens-rs"
 repository = "https://github.com/plausiblelabs/lens-rs"
 readme = "README.md"
 
-[badges]
-travis-ci = { repository = "plausiblelabs/lens-rs" }
-
 [dependencies]
 pl-lens-derive = { path = "lens-derive", version = "1.0.0" }
 pl-lens-macros = { path = "lens-macros", version = "1.0.0" }

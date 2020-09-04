@@ -75,7 +75,7 @@ pub fn lens(input: TokenStream) -> TokenStream {
 
     // Build the output
     let expanded = quote! {
-        compose_lens!(#(#lens_exprs),*);
+        pl_lens::compose_lens!(#(#lens_exprs),*);
     };
 
     // Hand the output tokens back to the compiler
