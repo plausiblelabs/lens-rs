@@ -1,6 +1,6 @@
 [package]
 name = "pl-lens"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2018"
 authors = ["Chris Campbell <campbell@plausible.coop>"]
 license = "MIT"
@@ -11,8 +11,8 @@ repository = "https://github.com/plausiblelabs/lens-rs"
 readme = "README.md"
 
 [dependencies]
-pl-lens-derive = { path = "lens-derive", version = "1.0.0" }
-pl-lens-macros = { path = "lens-macros", version = "1.0.0" }
+pl-lens-derive = { path = "lens-derive", version = "1.0.1" }
+pl-lens-macros = { path = "lens-macros", version = "1.0.1" }
 proc-macro-hack = "0.5"
 
 [workspace]

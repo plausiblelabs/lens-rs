@@ -1,6 +1,6 @@
 [package]
 name = "pl-lens-macros"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2018"
 authors = ["Chris Campbell <campbell@plausible.coop>"]
 license = "MIT"
