@@ -130,6 +130,11 @@ pub fn lenses_derive(input: TokenStream) -> TokenStream {
     //     }
     let lenses_struct_name = format_ident!("{}Lenses", struct_name);
     let lenses_struct_fields = fields.iter().map(|field| {
+        let field_visibility = match field.vis {
+            Visibility::Public(..) => quote!(pub),
+            _ => quote!(), // default to private for now
+        };
+
         if let Some(field_name) = &field.ident {
             let field_lens_name = format_ident!(
                 "{}{}Lens",
@@ -137,14 +142,14 @@ pub fn lenses_derive(input: TokenStream) -> TokenStream {
                 to_camel_case(&field_name.to_string())
             );
             if is_primitive(&field.ty) {
-                quote!(#field_name: #field_lens_name)
+                quote!(#field_visibility #field_name: #field_lens_name)
             } else {
                 let field_parent_lenses_field_name = format_ident!("{}_lenses", field_name);
                 let field_parent_lenses_type_name =
                     format_ident!("{}Lenses", to_camel_case(&field_name.to_string()));
                 quote!(
-                    #field_name: #field_lens_name,
-                    #field_parent_lenses_field_name: #field_parent_lenses_type_name
+                    #field_visibility #field_name: #field_lens_name,
+                    #field_visibility #field_parent_lenses_field_name: #field_parent_lenses_type_name
                 )
             }
         } else {
