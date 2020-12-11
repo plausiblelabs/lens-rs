@@ -10,6 +10,7 @@ struct Address {
     street: String,
     city: String,
     postcode: String,
+    #[leaf] names: Vec<String>
 }
 
 #[derive(Lenses)]
@@ -30,6 +31,7 @@ fn a_simple_nested_data_structure_should_be_lensable() {
             street: "123 Needmore Rd".to_string(),
             city: "Dayton".to_string(),
             postcode: "99999".to_string(),
+            names: vec!["a".into(),"vec".into()],
         },
     };
     assert_eq!(lens!(Person.name).get_ref(&p0), "Pop Zeus");
