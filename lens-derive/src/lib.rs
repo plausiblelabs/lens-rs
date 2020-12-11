@@ -7,11 +7,11 @@ extern crate proc_macro;
 
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
-use syn::{parse_macro_input, Data, DataStruct, DeriveInput, Fields, Visibility};
+use syn::{parse_macro_input, Meta, Data, DataStruct, DeriveInput, Fields, Visibility};
 
 /// Handles the `#derive(Lenses)` applied to a struct by generating a `Lens` implementation for
 /// each field in the struct.
-#[proc_macro_derive(Lenses)]
+#[proc_macro_derive(Lenses,attributes(leaf))]
 pub fn lenses_derive(input: TokenStream) -> TokenStream {
     // Parse the input tokens into a syntax tree
     let input = parse_macro_input!(input as DeriveInput);
@@ -134,7 +134,6 @@ pub fn lenses_derive(input: TokenStream) -> TokenStream {
             Visibility::Public(..) => quote!(pub),
             _ => quote!(), // default to private for now
         };
-
         if let Some(field_name) = &field.ident {
             let field_lens_name = format_ident!(
                 "{}{}Lens",
@@ -143,7 +142,9 @@ pub fn lenses_derive(input: TokenStream) -> TokenStream {
             );
             if is_primitive(&field.ty) {
                 quote!(#field_visibility #field_name: #field_lens_name)
-            } else {
+            } else if is_leaf(&field) {
+                quote!(#field_visibility #field_name: #field_lens_name)
+            }else {
                 let field_parent_lenses_field_name = format_ident!("{}_lenses", field_name);
                 let field_parent_lenses_type_name =
                     format_ident!("{}Lenses", to_camel_case(&field_name.to_string()));
@@ -181,6 +182,8 @@ pub fn lenses_derive(input: TokenStream) -> TokenStream {
             let field_lens_name = format_ident!("{}{}Lens", struct_name, to_camel_case(&field_name.to_string()));
             if is_primitive(&field.ty) {
                 quote!(#field_name: #field_lens_name)
+            } else if is_leaf(&field) {
+                quote!(#field_name: #field_lens_name)
             } else {
                 let field_parent_lenses_field_name = format_ident!("{}_lenses", field_name);
                 let field_parent_lenses_type_name = format_ident!("_{}Lenses", to_camel_case(&field_name.to_string()));
@@ -217,6 +220,25 @@ pub fn lenses_derive(input: TokenStream) -> TokenStream {
     TokenStream::from(expanded)
 }
 
+/// Return true if the field is marked as a leaf field, which means that it doesn't have lenses
+/// defined and it should be accessed similarly to a primitive.  This is done with the #[leaf]
+/// attribute marker on the struct field. Internally, this is currently treated exactly the same as
+/// is the case for is_primitive, with the exception that it does _not_ generate a ValueLens for
+/// leaf fields.
+fn is_leaf(field: &syn::Field) -> bool {
+    let result = field.attrs.iter()
+        .filter_map(|attr| match attr.parse_meta().unwrap() {
+            Meta::Path(ref p) => {
+                p.get_ident().map(|id| id.to_string())
+            },
+            _ => None
+        })
+        .filter(|id| id=="leaf")
+        .nth(0)
+        .is_some();
+    result
+}
+
 /// Return true if the given type should be considered a primitive, i.e., whether
 /// it doesn't have lenses defined for it.
 fn is_primitive(ty: &syn::Type) -> bool {
@@ -227,7 +249,7 @@ fn is_primitive(ty: &syn::Type) -> bool {
         // lenses derived
         "i8" | "i16" | "i32" | "i64" | "u8" | "u16" | "u32" | "u64" | "f32" | "f64" | "String" => {
             true
-        }
+        },
         _ => false,
     }
 }
